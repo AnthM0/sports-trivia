@@ -1,2 +1,2 @@
 # sports-trivia
-Website to Run Sports Trivia games
+Website to run various Sports Trivia games
