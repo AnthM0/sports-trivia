@@ -1,0 +1,448 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Pinpoint Challenge{% endblock %}
+
+{% block content %}
+<style>
+    .pc-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2.5rem 1.5rem 3rem;
+    }
+
+    .pc-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #888;
+        margin: 0 0 10px;
+    }
+
+    .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .mode-card {
+        padding: 14px 10px;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        background: #fff;
+        cursor: pointer;
+        text-align: center;
+        transition: border-color 0.15s, background 0.15s;
+    }
+
+    .mode-card:hover:not(:disabled) {
+        border-color: #1a1a2e;
+        background: #f7f7f9;
+    }
+
+    .mode-card.selected {
+        border: 2px solid #1a1a2e;
+        background: #f4f6f9;
+    }
+
+    .mode-card:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .mode-icon {
+        display: block;
+        margin: 0 auto 6px;
+        fill: #555;
+    }
+
+    .mode-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 0;
+        color: #1a1a2e;
+    }
+
+    .mode-sub {
+        font-size: 11px;
+        margin: 2px 0 0;
+        color: #999;
+    }
+
+    .play-btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 12px;
+        background: #1a1a2e;
+        color: #fff;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .play-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .play-btn:not(:disabled):hover {
+        background: #2e2e4e;
+    }
+
+    .modal-field-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #888;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+    }
+
+    .modal-input {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        background: #fff;
+        color: #1a1a2e;
+        font-size: 14px;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+
+    .modal-input:focus {
+        outline: none;
+        border-color: #1a1a2e;
+    }
+
+    .sport-card {
+        border: 1px solid #ddd;
+        background: #fff;
+    }
+
+    .sport-card-selected {
+        border: 2px solid #1a1a2e;
+        background: #f4f6f9;
+    }
+</style>
+
+<div class="pc-page">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+        <svg viewBox="0 0 24 24" width="30" height="30" style="fill:#1a1a2e; flex-shrink:0;">
+            <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" />
+        </svg>
+        <h1 style="font-size:26px; font-weight:600; margin:0; color:#1a1a2e;">Pinpoint Challenge</h1>
+    </div>
+    <p style="font-size:14px; color:#777; margin:0 0 2.5rem;">Pick a mode, sport, and trivia set to begin.</p>
+
+    <div style="width:100%; max-width:520px; display:flex; flex-direction:column; gap:1.5rem;">
+
+        <!-- Game mode -->
+        <div>
+            <p class="pc-label">Game mode</p>
+            <div class="mode-grid">
+                <button class="mode-card" onclick="selectMode(this,'single')">
+                    <svg class="mode-icon" viewBox="0 0 24 24" width="22" height="22">
+                        <path
+                            d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                    </svg>
+                    <p class="mode-title">Single player</p>
+                </button>
+                <button class="mode-card" disabled>
+                    <svg class="mode-icon" viewBox="0 0 24 24" width="22" height="22" style="fill:#bbb;">
+                        <path
+                            d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                    </svg>
+                    <p class="mode-title" style="color:#bbb;">Local</p>
+                    <p class="mode-sub">Coming soon</p>
+                </button>
+                <button class="mode-card" disabled>
+                    <svg class="mode-icon" viewBox="0 0 24 24" width="22" height="22" style="fill:#bbb;">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                    </svg>
+                    <p class="mode-title" style="color:#bbb;">Online</p>
+                    <p class="mode-sub">Coming soon</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sport -->
+        <div>
+            <p class="pc-label">Sport</p>
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px;" id="sportGrid">
+                {% for sport_code, sport_name in sport_choices %}
+                <button onclick="selectSport(this, '{{ sport_code }}')"
+                    class="sport-card {% if selected_sport == sport_code %}sport-card-selected{% endif %}"
+                    style="padding:14px 16px; border-radius:12px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:0.15s;">
+                    <div style="text-align:left;">
+                        <p style="font-size:15px; font-weight:500; margin:0; color:#1a1a2e;">{{ sport_name }}</p>
+                        <p style="font-size:12px; color:#888; margin:0;">
+                            {% if sport_code == 'mlb' %}Baseball{% elif sport_code == 'nfl' %}American football{% endif %}
+                        </p>
+                    </div>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Trivia sets -->
+        <div id="categorySection" {% if not selected_sport %}style="display:none;" {% endif %}>
+            <p class="pc-label">Trivia sets</p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:12px;"
+                id="categoryGrid">
+
+                {% for cat in categories %}
+                <button onclick="selectCategory(this, '{{ cat.stat_code }}')" style="padding:16px; border-radius:12px; border:1px solid #ddd; background:#fff;
+                 cursor:pointer; text-align:left; transition:0.15s; display:flex; flex-direction:column; gap:6px;">
+                    <p style="font-size:14px; font-weight:600; margin:0; color:#1a1a2e;">{{ cat.title }}</p>
+                    <p style="font-size:12px; color:#777; margin:0; line-height:1.5;">{{ cat.description }}</p>
+                </button>
+                {% endfor %}
+
+                <button onclick="openAddModal()" style="padding:16px; border-radius:12px; border:1.5px dashed #ccc; background:transparent;
+                 cursor:pointer; display:flex; flex-direction:column; align-items:center;
+                 justify-content:center; gap:6px; min-height:90px; width:100%;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" style="fill:#aaa;">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
+                    <p style="font-size:13px; color:#888; margin:0; font-weight:600;">Add a new trivia set</p>
+                </button>
+
+            </div>
+        </div>
+
+        <!-- Play -->
+        <form method="get" action="{% url 'pinpoint_challenge' %}">
+            <input type="hidden" name="mode" id="hiddenMode">
+            <input type="hidden" name="sport" value="{{ selected_sport }}">
+            <input type="hidden" name="category" id="hiddenCategory">
+            <button type="submit" class="play-btn" id="playBtn" disabled>Play →</button>
+        </form>
+
+    </div>
+</div>
+
+<!-- Add trivia set modal -->
+<div id="addCategoryModal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; padding:1.5rem;">
+    <div
+        style="background:#fff; border-radius:14px; padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; position:relative;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <h2 style="font-size:18px; font-weight:600; margin:0; color:#1a1a2e;">Add a new trivia set</h2>
+            <button onclick="closeAddModal()"
+                style="background:none; border:none; cursor:pointer; font-size:20px; color:#aaa; line-height:1; padding:4px;">&#x2715;</button>
+        </div>
+
+        <div id="modalError"
+            style="display:none; background:#fff0f0; border:1px solid #ffcccc; color:#cc0000; padding:8px 12px; border-radius:8px; font-size:13px; margin-bottom:14px;">
+        </div>
+        <div id="modalSuccess"
+            style="display:none; background:#f0fff4; border:1px solid #b2f5c8; color:#1a7a3c; padding:8px 12px; border-radius:8px; font-size:13px; margin-bottom:14px;">
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
+            <div>
+                <label class="modal-field-label">Sport</label>
+                <select id="addSport" class="modal-input">
+                    {% for sport_code, sport_name in sport_choices %}
+                    <option value="{{ sport_code }}">{{ sport_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="modal-field-label">Name</label>
+                <input type="text" id="addTitle" placeholder="e.g. Career home runs" class="modal-input" />
+            </div>
+
+            <div>
+                <label class="modal-field-label">Description</label>
+                <textarea id="addDescription" placeholder="Brief description of what this trivia set tests..." rows="2"
+                    class="modal-input" style="resize:vertical;"></textarea>
+            </div>
+
+            <div>
+                <label class="modal-field-label">Stat code</label>
+                <input type="text" id="addStatCode" placeholder="e.g. career_hr" class="modal-input"
+                    style="font-family:monospace;" />
+                <p style="font-size:12px; color:#999; margin:5px 0 0;">Unique identifier, lowercase with underscores.
+                </p>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                    <label class="modal-field-label">Recommended pinpoint</label>
+                    <input type="number" id="addRecommendedPinpoint" placeholder="e.g. 5" class="modal-input" min="1" />
+                </div>
+                <div>
+                    <label class="modal-field-label">Total players</label>
+                    <input type="number" id="addTotalPlayers" placeholder="e.g. 100" class="modal-input" min="1" />
+                </div>
+            </div>
+
+            <div style="border-top:1px solid #eee; padding-top:14px; display:flex; flex-direction:column; gap:12px;">
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="addVerified"
+                        style="margin-top:3px; width:15px; height:15px; flex-shrink:0;" />
+                    <div>
+                        <p style="font-size:14px; font-weight:600; margin:0; color:#1a1a2e;">Verified</p>
+                        <p style="font-size:12px; color:#777; margin:3px 0 0;">Mark this trivia set as verified and accurate.</p>
+                    </div>
+                </label>
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="addMerge"
+                        style="margin-top:3px; width:15px; height:15px; flex-shrink:0;" />
+                    <div>
+                        <p style="font-size:14px; font-weight:600; margin:0; color:#1a1a2e;">Merge with existing player database</p>
+                        <p style="font-size:12px; color:#777; margin:3px 0 0;">Match CSV entries against known players by name.</p>
+                    </div>
+                </label>
+            </div>
+
+            <div>
+                <label class="modal-field-label">Upload CSV</label>
+                <div style="border:1.5px dashed #ccc; border-radius:8px; padding:18px; text-align:center;">
+                    <svg viewBox="0 0 24 24" width="24" height="24"
+                        style="fill:#bbb; display:block; margin:0 auto 8px;">
+                        <path
+                            d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8z" />
+                    </svg>
+                    <p style="font-size:13px; color:#777; margin:0 0 8px;">Drop a CSV file here or click to browse</p>
+                    <input type="file" id="addCsv" accept=".csv" style="font-size:13px; color:#555;" />
+                </div>
+                <div style="margin-top:8px; background:#f7f8fa; border-radius:8px; padding:10px 12px;">
+                    <p style="font-size:12px; font-weight:600; color:#555; margin:0 0 4px;">Expected CSV format</p>
+                    <code style="font-size:12px;">Player Name, Unique Stat Code</code>
+                    <p style="font-size:12px; color:#999; margin:4px 0 0;">e.g.</p>
+                    <code style="font-size:12px; display:block;">Player Name, career_hr</code>
+                    <code style="font-size:12px; display:block;">Babe Ruth, 714</code>
+                </div>
+            </div>
+
+            <button onclick="submitAddCategory()"
+                style="width:100%; padding:12px; font-size:14px; font-weight:600; border:none; border-radius:12px; background:#1a1a2e; color:#fff; cursor:pointer; margin-top:4px;">
+                Save trivia set
+            </button>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    var selectedMode = null, selectedSport = '{{ selected_sport }}', selectedCategory = null, selectedDiff = null;
+
+    function selectMode(btn, mode) {
+        selectedMode = mode;
+        document.querySelectorAll('.mode-card').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        document.getElementById('hiddenMode').value = mode;
+        checkReady();
+    }
+
+    function selectSport(btn, sport) {
+        window.location.href = '?sport=' + sport;
+    }
+
+    function selectCategory(btn, statCode) {
+        selectedCategory = statCode;
+        document.querySelectorAll('#categoryGrid button:not([onclick="openAddModal()"])').forEach(b => {
+            b.style.border = '1px solid #ddd';
+            b.style.background = '#fff';
+        });
+        btn.style.border = '2px solid #1a1a2e';
+        btn.style.background = '#f4f6f9';
+        document.getElementById('hiddenCategory').value = statCode;
+        checkReady();
+    }
+
+    function checkReady() {
+        var ready = selectedMode && selectedCategory && selectedDiff;
+        document.getElementById('playBtn').disabled = !ready;
+    }
+
+    if (selectedSport) {
+        document.getElementById('categorySection').style.display = 'block';
+    }
+
+    function openAddModal() {
+        var modal = document.getElementById('addCategoryModal');
+        modal.style.display = 'flex';
+        if (selectedSport) {
+            document.getElementById('addSport').value = selectedSport;
+        }
+        document.getElementById('modalError').style.display = 'none';
+        document.getElementById('modalSuccess').style.display = 'none';
+    }
+
+    function closeAddModal() {
+        document.getElementById('addCategoryModal').style.display = 'none';
+    }
+
+    document.getElementById('addCategoryModal').addEventListener('click', function (e) {
+        if (e.target === this) closeAddModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAddModal();
+    });
+
+    function submitAddCategory() {
+        var sport = document.getElementById('addSport').value;
+        var title = document.getElementById('addTitle').value.trim();
+        var description = document.getElementById('addDescription').value.trim();
+        var statCode = document.getElementById('addStatCode').value.trim();
+        var verified = document.getElementById('addVerified').checked;
+        var recommendedPinpoint = document.getElementById('addRecommendedPinpoint').value.trim();
+        var totalPlayers = document.getElementById('addTotalPlayers').value.trim();
+
+        var errorEl = document.getElementById('modalError');
+        var successEl = document.getElementById('modalSuccess');
+        errorEl.style.display = 'none';
+        successEl.style.display = 'none';
+
+        if (!title || !statCode || !sport) {
+            errorEl.textContent = 'Name, stat code, and sport are required.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('sport', sport);
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('stat_code', statCode);
+        formData.append('verified', verified ? 'true' : 'false');
+        formData.append('recommended_pinpoint', recommendedPinpoint);
+        formData.append('total_players', totalPlayers);
+        var csvFile = document.getElementById('addCsv').files[0];
+        if (csvFile) formData.append('csv_file', csvFile);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('{% url "add_trivia_category" %}', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    successEl.textContent = 'Trivia set saved! Reloading...';
+                    successEl.style.display = 'block';
+                    setTimeout(() => window.location.href = '?sport=' + sport, 1000);
+                } else {
+                    errorEl.textContent = data.error || 'Something went wrong.';
+                    errorEl.style.display = 'block';
+                }
+            })
+            .catch(() => {
+                errorEl.textContent = 'Network error — please try again.';
+                errorEl.style.display = 'block';
+            });
+    }
+</script>
+
+{% endblock %}
