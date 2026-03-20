@@ -198,11 +198,31 @@
                 id="categoryGrid">
 
                 {% for cat in categories %}
-                <button onclick="selectCategory(this, '{{ cat.stat_code }}')" style="padding:16px; border-radius:12px; border:1px solid #ddd; background:#fff;
-                 cursor:pointer; text-align:left; transition:0.15s; display:flex; flex-direction:column; gap:6px;">
+                <div style="position:relative;">
+                <button onclick="selectCategory(this.parentElement.querySelector('[data-stat-code]'), '{{ cat.stat_code }}')"
+                    data-stat-code="{{ cat.stat_code }}"
+                    style="padding:16px; padding-right:36px; border-radius:12px; border:1px solid #ddd; background:#fff;
+                            cursor:pointer; text-align:left; transition:0.15s; display:flex; flex-direction:column; gap:6px; width:100%;">
                     <p style="font-size:14px; font-weight:600; margin:0; color:#1a1a2e;">{{ cat.title }}</p>
                     <p style="font-size:12px; color:#777; margin:0; line-height:1.5;">{{ cat.description }}</p>
                 </button>
+                <button
+                    data-id="{{ cat.id }}"
+                    data-title="{{ cat.title|escapejs }}"
+                    data-description="{{ cat.description|escapejs }}"
+                    data-sport="{{ cat.sport }}"
+                    data-stat-code="{{ cat.stat_code }}"
+                    data-verified="{{ cat.verified|yesno:'true,false' }}"
+                    data-pinpoint="{{ cat.recommended_pinpoint|default:0 }}"
+                    data-total-players="{{ cat.total_players|default:0 }}"
+                    onclick="openEditModal(this)"
+                    title="Edit"
+                    style="position:absolute; top:10px; right:10px; background:none; border:none; cursor:pointer; padding:4px; color:#bbb; line-height:1; border-radius:6px; transition:color 0.15s, background 0.15s;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" style="fill:currentColor;">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                </button>
+                </div>
                 {% endfor %}
 
                 <button onclick="openAddModal()" style="padding:16px; border-radius:12px; border:1.5px dashed #ccc; background:transparent;
@@ -228,221 +248,335 @@
     </div>
 </div>
 
-<!-- Add trivia set modal -->
+<!-- Add / Edit trivia set modal -->
 <div id="addCategoryModal"
-    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; padding:1.5rem;">
-    <div
-        style="background:#fff; border-radius:14px; padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; position:relative;">
+   style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; padding:1.5rem;">
+   <div style="background:#fff; border-radius:14px; padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; position:relative;">
 
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:600; margin:0; color:#1a1a2e;">Add a new trivia set</h2>
-            <button onclick="closeAddModal()"
-                style="background:none; border:none; cursor:pointer; font-size:20px; color:#aaa; line-height:1; padding:4px;">&#x2715;</button>
-        </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+         <h2 id="modalTitle" style="font-size:18px; font-weight:600; margin:0; color:#1a1a2e;">Add a new trivia set</h2>
+         <button onclick="closeAddModal()" style="background:none; border:none; cursor:pointer; font-size:20px; color:#aaa; line-height:1; padding:4px;">&#x2715;</button>
+      </div>
 
-        <div id="modalError"
-            style="display:none; background:#fff0f0; border:1px solid #ffcccc; color:#cc0000; padding:8px 12px; border-radius:8px; font-size:13px; margin-bottom:14px;">
-        </div>
-        <div id="modalSuccess"
-            style="display:none; background:#f0fff4; border:1px solid #b2f5c8; color:#1a7a3c; padding:8px 12px; border-radius:8px; font-size:13px; margin-bottom:14px;">
-        </div>
+      <div id="modalError" style="display:none; background:#fff0f0; border:1px solid #ffcccc; color:#cc0000; padding:8px 12px; border-radius:8px; font-size:13px; margin-bottom:14px;"></div>
+      <div id="modalSuccess" style="display:none; background:#f0fff4; border:1px solid #b2f5c8; color:#1a7a3c; padding:8px 12px; border-radius:8px; font-size:13px; margin-bottom:14px;"></div>
 
-        <div style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; flex-direction:column; gap:16px;">
 
+         <div>
+            <label class="modal-field-label">Sport</label>
+            <select id="addSport" class="modal-input">
+               {% for sport_code, sport_name in sport_choices %}
+                  <option value="{{ sport_code }}">{{ sport_name }}</option>
+               {% endfor %}
+            </select>
+         </div>
+
+         <div>
+            <label class="modal-field-label">Name</label>
+            <input type="text" id="addTitle" placeholder="e.g. Career home runs" class="modal-input" />
+         </div>
+
+         <div>
+            <label class="modal-field-label">Description</label>
+            <textarea id="addDescription" placeholder="Brief description of what this trivia set tests..." rows="2"
+               class="modal-input" style="resize:vertical;"></textarea>
+         </div>
+
+         <div>
+            <label class="modal-field-label">Stat code</label>
+            <input type="text" id="addStatCode" placeholder="e.g. career_hr" class="modal-input" style="font-family:monospace;" />
+            <p style="font-size:12px; color:#999; margin:5px 0 0;">Unique identifier, lowercase with underscores.</p>
+         </div>
+
+         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div>
-                <label class="modal-field-label">Sport</label>
-                <select id="addSport" class="modal-input">
-                    {% for sport_code, sport_name in sport_choices %}
-                    <option value="{{ sport_code }}">{{ sport_name }}</option>
-                    {% endfor %}
-                </select>
+               <label class="modal-field-label">Recommended pinpoint</label>
+               <input type="number" id="addRecommendedPinpoint" placeholder="e.g. 5" class="modal-input" min="1" />
             </div>
-
             <div>
-                <label class="modal-field-label">Name</label>
-                <input type="text" id="addTitle" placeholder="e.g. Career home runs" class="modal-input" />
+               <label class="modal-field-label">Total players</label>
+               <input type="number" id="addTotalPlayers" placeholder="e.g. 100" class="modal-input" min="1" />
             </div>
+         </div>
 
-            <div>
-                <label class="modal-field-label">Description</label>
-                <textarea id="addDescription" placeholder="Brief description of what this trivia set tests..." rows="2"
-                    class="modal-input" style="resize:vertical;"></textarea>
+         <div style="border-top:1px solid #eee; padding-top:14px; display:flex; flex-direction:column; gap:12px;">
+            <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+               <input type="checkbox" id="addVerified" style="margin-top:3px; width:15px; height:15px; flex-shrink:0;" />
+               <div>
+                  <p style="font-size:14px; font-weight:600; margin:0; color:#1a1a2e;">Verified</p>
+                  <p style="font-size:12px; color:#777; margin:3px 0 0;">Mark this trivia set as verified and accurate.</p>
+               </div>
+            </label>
+            <label id="mergeRow" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+               <input type="checkbox" id="addMerge" style="margin-top:3px; width:15px; height:15px; flex-shrink:0;" />
+               <div>
+                  <p style="font-size:14px; font-weight:600; margin:0; color:#1a1a2e;">Merge with existing player database</p>
+                  <p style="font-size:12px; color:#777; margin:3px 0 0;">Match CSV entries against known players by name.</p>
+               </div>
+            </label>
+         </div>
+
+         <div id="csvRow">
+            <label class="modal-field-label">Upload CSV</label>
+            <div style="border:1.5px dashed #ccc; border-radius:8px; padding:18px; text-align:center;">
+               <svg viewBox="0 0 24 24" width="24" height="24" style="fill:#bbb; display:block; margin:0 auto 8px;">
+                  <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8z"/>
+               </svg>
+               <p style="font-size:13px; color:#777; margin:0 0 8px;">Drop a CSV file here or click to browse</p>
+               <input type="file" id="addCsv" accept=".csv" style="font-size:13px; color:#555;" />
             </div>
-
-            <div>
-                <label class="modal-field-label">Stat code</label>
-                <input type="text" id="addStatCode" placeholder="e.g. career_hr" class="modal-input"
-                    style="font-family:monospace;" />
-                <p style="font-size:12px; color:#999; margin:5px 0 0;">Unique identifier, lowercase with underscores.
-                </p>
+            <div style="margin-top:8px; background:#f7f8fa; border-radius:8px; padding:10px 12px;">
+               <p style="font-size:12px; font-weight:600; color:#555; margin:0 0 4px;">Expected CSV format</p>
+               <code style="font-size:12px;">name, stat</code>
+               <p style="font-size:12px; color:#999; margin:4px 0 0;">e.g.</p>
+               <code style="font-size:12px; display:block;">Player Name, career_hr</code>
+               <code style="font-size:12px; display:block;">Babe Ruth, 714</code>
             </div>
+         </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div>
-                    <label class="modal-field-label">Recommended pinpoint</label>
-                    <input type="number" id="addRecommendedPinpoint" placeholder="e.g. 5" class="modal-input" min="1" />
-                </div>
-                <div>
-                    <label class="modal-field-label">Total players</label>
-                    <input type="number" id="addTotalPlayers" placeholder="e.g. 100" class="modal-input" min="1" />
-                </div>
-            </div>
+         <button id="modalSaveBtn" onclick="submitModal()"
+            style="width:100%; padding:12px; font-size:14px; font-weight:600; border:none; border-radius:12px; background:#1a1a2e; color:#fff; cursor:pointer; margin-top:4px;">
+            Save trivia set
+         </button>
 
-            <div style="border-top:1px solid #eee; padding-top:14px; display:flex; flex-direction:column; gap:12px;">
-                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                    <input type="checkbox" id="addVerified"
-                        style="margin-top:3px; width:15px; height:15px; flex-shrink:0;" />
-                    <div>
-                        <p style="font-size:14px; font-weight:600; margin:0; color:#1a1a2e;">Verified</p>
-                        <p style="font-size:12px; color:#777; margin:3px 0 0;">Mark this trivia set as verified and accurate.</p>
-                    </div>
-                </label>
-                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                    <input type="checkbox" id="addMerge"
-                        style="margin-top:3px; width:15px; height:15px; flex-shrink:0;" />
-                    <div>
-                        <p style="font-size:14px; font-weight:600; margin:0; color:#1a1a2e;">Merge with existing player database</p>
-                        <p style="font-size:12px; color:#777; margin:3px 0 0;">Match CSV entries against known players by name.</p>
-                    </div>
-                </label>
-            </div>
+         <button id="modalDeleteBtn" onclick="confirmDeleteCategory()"
+            style="display:none; width:100%; padding:12px; font-size:14px; font-weight:600; border:1px solid #ffcccc; border-radius:12px; background:#fff0f0; color:#cc0000; cursor:pointer;">
+            Delete trivia set
+         </button>
 
-            <div>
-                <label class="modal-field-label">Upload CSV</label>
-                <div style="border:1.5px dashed #ccc; border-radius:8px; padding:18px; text-align:center;">
-                    <svg viewBox="0 0 24 24" width="24" height="24"
-                        style="fill:#bbb; display:block; margin:0 auto 8px;">
-                        <path
-                            d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8z" />
-                    </svg>
-                    <p style="font-size:13px; color:#777; margin:0 0 8px;">Drop a CSV file here or click to browse</p>
-                    <input type="file" id="addCsv" accept=".csv" style="font-size:13px; color:#555;" />
-                </div>
-                <div style="margin-top:8px; background:#f7f8fa; border-radius:8px; padding:10px 12px;">
-                    <p style="font-size:12px; font-weight:600; color:#555; margin:0 0 4px;">Expected CSV format</p>
-                    <code style="font-size:12px;">Player Name, Unique Stat Code</code>
-                    <p style="font-size:12px; color:#999; margin:4px 0 0;">e.g.</p>
-                    <code style="font-size:12px; display:block;">Player Name, career_hr</code>
-                    <code style="font-size:12px; display:block;">Babe Ruth, 714</code>
-                </div>
-            </div>
-
-            <button onclick="submitAddCategory()"
-                style="width:100%; padding:12px; font-size:14px; font-weight:600; border:none; border-radius:12px; background:#1a1a2e; color:#fff; cursor:pointer; margin-top:4px;">
-                Save trivia set
-            </button>
-
-        </div>
-    </div>
+      </div>
+   </div>
 </div>
 
 <script>
-    var selectedMode = null, selectedSport = '{{ selected_sport }}', selectedCategory = null, selectedDiff = null;
+   var selectedMode = null, selectedSport = '{{ selected_sport }}', selectedCategory = null;
+   var modalMode = 'add';
+   var editingCategoryId = null;
 
-    function selectMode(btn, mode) {
-        selectedMode = mode;
-        document.querySelectorAll('.mode-card').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        document.getElementById('hiddenMode').value = mode;
-        checkReady();
+   function selectMode(btn, mode) {
+      selectedMode = mode;
+      document.querySelectorAll('.mode-card').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('hiddenMode').value = mode;
+      checkReady();
+   }
+
+   function selectSport(btn, sport) {
+      window.location.href = '?sport=' + sport;
+   }
+
+   function selectCategory(btn, statCode) {
+      selectedCategory = statCode;
+      document.querySelectorAll('#categoryGrid button[data-stat-code]').forEach(b => {
+         b.style.border = '1px solid #ddd';
+         b.style.background = '#fff';
+      });
+      btn.style.border = '2px solid #1a1a2e';
+      btn.style.background = '#f4f6f9';
+      document.getElementById('hiddenCategory').value = statCode;
+      checkReady();
+   }
+
+   function checkReady() {
+      var ready = selectedMode && selectedCategory;
+      document.getElementById('playBtn').disabled = !ready;
+   }
+
+   if (selectedSport) {
+      document.getElementById('categorySection').style.display = 'block';
+   }
+
+   // ── Modal shared helpers ──
+   function resetModal() {
+      document.getElementById('addTitle').value = '';
+      document.getElementById('addDescription').value = '';
+      document.getElementById('addStatCode').value = '';
+      document.getElementById('addRecommendedPinpoint').value = '';
+      document.getElementById('addTotalPlayers').value = '';
+      document.getElementById('addVerified').checked = false;
+      document.getElementById('addMerge').checked = false;
+      document.getElementById('addCsv').value = '';
+      document.getElementById('modalError').style.display = 'none';
+      document.getElementById('modalSuccess').style.display = 'none';
+   }
+
+   function openAddModal() {
+      modalMode = 'add';
+      editingCategoryId = null;
+      resetModal();
+      document.getElementById('modalTitle').textContent = 'Add a new trivia set';
+      document.getElementById('modalSaveBtn').textContent = 'Save trivia set';
+      document.getElementById('modalDeleteBtn').style.display = 'none';
+      document.getElementById('csvRow').style.display = 'block';
+      document.getElementById('mergeRow').style.display = 'flex';
+      if (selectedSport) document.getElementById('addSport').value = selectedSport;
+      document.getElementById('addCategoryModal').style.display = 'flex';
+   }
+
+    function openEditModal(btn) {
+        var d = btn.dataset;
+        modalMode = 'edit';
+        editingCategoryId = d.id;
+        resetModal();
+        document.getElementById('modalTitle').textContent = 'Edit trivia set';
+        document.getElementById('modalSaveBtn').textContent = 'Save changes';
+        document.getElementById('modalDeleteBtn').style.display = 'block';
+        document.getElementById('csvRow').style.display = 'none';
+        document.getElementById('mergeRow').style.display = 'none';
+        document.getElementById('addSport').value = d.sport;
+        document.getElementById('addTitle').value = d.title;
+        document.getElementById('addDescription').value = d.description;
+        document.getElementById('addStatCode').value = d.statCode;
+        document.getElementById('addVerified').checked = d.verified === 'true';
+        document.getElementById('addRecommendedPinpoint').value = d.pinpoint || '';
+        document.getElementById('addTotalPlayers').value = d.totalPlayers || '';
+        document.getElementById('addCategoryModal').style.display = 'flex';
     }
 
-    function selectSport(btn, sport) {
-        window.location.href = '?sport=' + sport;
-    }
+   function closeAddModal() {
+      document.getElementById('addCategoryModal').style.display = 'none';
+   }
 
-    function selectCategory(btn, statCode) {
-        selectedCategory = statCode;
-        document.querySelectorAll('#categoryGrid button:not([onclick="openAddModal()"])').forEach(b => {
-            b.style.border = '1px solid #ddd';
-            b.style.background = '#fff';
-        });
-        btn.style.border = '2px solid #1a1a2e';
-        btn.style.background = '#f4f6f9';
-        document.getElementById('hiddenCategory').value = statCode;
-        checkReady();
-    }
+   document.getElementById('addCategoryModal').addEventListener('click', function(e) {
+      if (e.target === this) closeAddModal();
+   });
 
-    function checkReady() {
-        var ready = selectedMode && selectedCategory && selectedDiff;
-        document.getElementById('playBtn').disabled = !ready;
-    }
+   document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeAddModal();
+   });
 
-    if (selectedSport) {
-        document.getElementById('categorySection').style.display = 'block';
-    }
+   // ── Submit (add or edit) ──
+   function submitModal() {
+      if (modalMode === 'edit') {
+         submitEditCategory();
+      } else {
+         submitAddCategory();
+      }
+   }
 
-    function openAddModal() {
-        var modal = document.getElementById('addCategoryModal');
-        modal.style.display = 'flex';
-        if (selectedSport) {
-            document.getElementById('addSport').value = selectedSport;
-        }
-        document.getElementById('modalError').style.display = 'none';
-        document.getElementById('modalSuccess').style.display = 'none';
-    }
+   function submitAddCategory() {
+      var title = document.getElementById('addTitle').value.trim();
+      var description = document.getElementById('addDescription').value.trim();
+      var statCode = document.getElementById('addStatCode').value.trim();
+      var sport = document.getElementById('addSport').value;
+      var verified = document.getElementById('addVerified').checked;
+      var merge = document.getElementById('addMerge').checked;
 
-    function closeAddModal() {
-        document.getElementById('addCategoryModal').style.display = 'none';
-    }
+      var errorEl = document.getElementById('modalError');
+      var successEl = document.getElementById('modalSuccess');
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
 
-    document.getElementById('addCategoryModal').addEventListener('click', function (e) {
-        if (e.target === this) closeAddModal();
-    });
+      if (!title || !statCode || !sport) {
+         errorEl.textContent = 'Name, stat code, and sport are required.';
+         errorEl.style.display = 'block';
+         return;
+      }
 
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeAddModal();
-    });
+      var formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('stat_code', statCode);
+      formData.append('sport', sport);
+      formData.append('verified', verified ? 'true' : 'false');
+      formData.append('merge', merge ? 'true' : 'false');
+      formData.append('recommended_pinpoint', document.getElementById('addRecommendedPinpoint').value);
+      formData.append('total_players', document.getElementById('addTotalPlayers').value);
+      var csvFile = document.getElementById('addCsv').files[0];
+      if (csvFile) formData.append('csv_file', csvFile);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-    function submitAddCategory() {
-        var sport = document.getElementById('addSport').value;
-        var title = document.getElementById('addTitle').value.trim();
-        var description = document.getElementById('addDescription').value.trim();
-        var statCode = document.getElementById('addStatCode').value.trim();
-        var verified = document.getElementById('addVerified').checked;
-        var recommendedPinpoint = document.getElementById('addRecommendedPinpoint').value.trim();
-        var totalPlayers = document.getElementById('addTotalPlayers').value.trim();
-
-        var errorEl = document.getElementById('modalError');
-        var successEl = document.getElementById('modalSuccess');
-        errorEl.style.display = 'none';
-        successEl.style.display = 'none';
-
-        if (!title || !statCode || !sport) {
-            errorEl.textContent = 'Name, stat code, and sport are required.';
+      fetch('{% url "add_trivia_category" %}', { method: 'POST', body: formData })
+         .then(r => r.json())
+         .then(data => {
+            if (data.success) {
+               var msg = 'Trivia set saved!';
+               if (data.players_processed) msg += ` ${data.players_processed} players processed.`;
+               if (data.warning) msg += ` Warning: ${data.warning}`;
+               successEl.textContent = msg + ' Reloading...';
+               successEl.style.display = 'block';
+               setTimeout(() => window.location.href = '?sport=' + sport, 1500);
+            } else {
+               errorEl.textContent = data.error || 'Something went wrong.';
+               errorEl.style.display = 'block';
+            }
+         })
+         .catch(() => {
+            errorEl.textContent = 'Network error — please try again.';
             errorEl.style.display = 'block';
-            return;
-        }
+         });
+   }
 
-        var formData = new FormData();
-        formData.append('sport', sport);
-        formData.append('title', title);
-        formData.append('description', description);
-        formData.append('stat_code', statCode);
-        formData.append('verified', verified ? 'true' : 'false');
-        formData.append('recommended_pinpoint', recommendedPinpoint);
-        formData.append('total_players', totalPlayers);
-        var csvFile = document.getElementById('addCsv').files[0];
-        if (csvFile) formData.append('csv_file', csvFile);
-        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+   function submitEditCategory() {
+      var title = document.getElementById('addTitle').value.trim();
+      var description = document.getElementById('addDescription').value.trim();
+      var statCode = document.getElementById('addStatCode').value.trim();
+      var sport = document.getElementById('addSport').value;
+      var verified = document.getElementById('addVerified').checked;
 
-        fetch('{% url "add_trivia_category" %}', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    successEl.textContent = 'Trivia set saved! Reloading...';
-                    successEl.style.display = 'block';
-                    setTimeout(() => window.location.href = '?sport=' + sport, 1000);
-                } else {
-                    errorEl.textContent = data.error || 'Something went wrong.';
-                    errorEl.style.display = 'block';
-                }
-            })
-            .catch(() => {
-                errorEl.textContent = 'Network error — please try again.';
-                errorEl.style.display = 'block';
-            });
-    }
+      var errorEl = document.getElementById('modalError');
+      var successEl = document.getElementById('modalSuccess');
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (!title || !statCode || !sport) {
+         errorEl.textContent = 'Name, stat code, and sport are required.';
+         errorEl.style.display = 'block';
+         return;
+      }
+
+      var formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('stat_code', statCode);
+      formData.append('sport', sport);
+      formData.append('verified', verified ? 'true' : 'false');
+      formData.append('recommended_pinpoint', document.getElementById('addRecommendedPinpoint').value);
+      formData.append('total_players', document.getElementById('addTotalPlayers').value);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+      fetch(`/edit-trivia-category/${editingCategoryId}/`, { method: 'POST', body: formData })
+         .then(r => r.json())
+         .then(data => {
+            if (data.success) {
+               successEl.textContent = 'Changes saved! Reloading...';
+               successEl.style.display = 'block';
+               setTimeout(() => window.location.reload(), 1000);
+            } else {
+               errorEl.textContent = data.error || 'Something went wrong.';
+               errorEl.style.display = 'block';
+            }
+         })
+         .catch(() => {
+            errorEl.textContent = 'Network error — please try again.';
+            errorEl.style.display = 'block';
+         });
+   }
+
+   function confirmDeleteCategory() {
+      var title = document.getElementById('addTitle').value || 'this trivia set';
+      if (!confirm(`Delete "${title}"? This will remove the associated stat from all linked players and cannot be undone.`)) return;
+
+      var formData = new FormData();
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+      fetch(`/delete-trivia-category/${editingCategoryId}/`, { method: 'POST', body: formData })
+         .then(r => r.json())
+         .then(data => {
+            if (data.success) {
+               closeAddModal();
+               window.location.href = '?sport=' + selectedSport;
+            } else {
+               document.getElementById('modalError').textContent = data.error || 'Something went wrong.';
+               document.getElementById('modalError').style.display = 'block';
+            }
+         })
+         .catch(() => {
+            document.getElementById('modalError').textContent = 'Network error — please try again.';
+            document.getElementById('modalError').style.display = 'block';
+         });
+   }
 </script>
 
 {% endblock %}

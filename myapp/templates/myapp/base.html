@@ -409,6 +409,14 @@
             </svg> Pinpoint Challenge
         </a>
 
+        <a href="{% url 'categories_and_players' %}"
+            class="sidebar-link {% if request.resolver_match.url_name == 'categories_and_players' %}active{% endif %}">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+            </svg>
+            Categories &amp; Players
+        </a>
+
         <div class="sidebar-divider"></div>
         <span class="sidebar-section-label">Account</span>
 

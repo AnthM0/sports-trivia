@@ -1,0 +1,284 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Categories & Players{% endblock %}
+
+{% block content %}
+{% load dict_extras %}
+<style>
+   .cap-page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+   }
+
+   .cap-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin: 0 0 6px;
+   }
+
+   .cap-subtitle {
+      font-size: 14px;
+      color: #777;
+      margin: 0 0 2rem;
+   }
+
+   .cap-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 2rem;
+   }
+
+   .cap-chip {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+   }
+
+   .cap-chip:hover {
+      border-color: #1a1a2e;
+      color: #1a1a2e;
+   }
+
+   .cap-chip.selected {
+      background: #1a1a2e;
+      border-color: #1a1a2e;
+      color: #fff;
+   }
+
+   .cap-chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+   }
+
+   .cap-group-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #aaa;
+      margin-right: 4px;
+   }
+
+   .cap-divider {
+      width: 1px;
+      height: 24px;
+      background: #e0e0e0;
+      margin: 0 4px;
+   }
+
+   .cap-table-wrap {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e0e4ea;
+      overflow: hidden;
+   }
+
+   .cap-table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #eee;
+   }
+
+   .cap-table-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin: 0;
+   }
+
+   .cap-table-meta {
+      font-size: 13px;
+      color: #999;
+   }
+
+   table {
+      width: 100%;
+      border-collapse: collapse;
+   }
+
+   thead th {
+      background: #f7f8fa;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #888;
+      padding: 10px 20px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+   }
+
+   thead th.num {
+      text-align: right;
+   }
+
+   tbody tr {
+      border-bottom: 1px solid #f2f2f2;
+      transition: background 0.1s;
+   }
+
+   tbody tr:last-child {
+      border-bottom: none;
+   }
+
+   tbody tr:hover {
+      background: #fafafa;
+   }
+
+   tbody td {
+      padding: 12px 20px;
+      font-size: 14px;
+      color: #1a1a2e;
+   }
+
+   tbody td.num {
+      text-align: right;
+      font-weight: 600;
+      color: #1a1a2e;
+      font-variant-numeric: tabular-nums;
+   }
+
+   tbody td.muted {
+      color: #999;
+      font-size: 13px;
+   }
+
+   .rank-cell {
+      font-size: 13px;
+      color: #bbb;
+      font-variant-numeric: tabular-nums;
+      width: 40px;
+   }
+
+   .sport-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #f0f3f8;
+      color: #555;
+   }
+
+   .empty-state {
+      padding: 48px 20px;
+      text-align: center;
+      color: #aaa;
+      font-size: 14px;
+   }
+
+   .empty-state svg {
+      fill: #ddd;
+      display: block;
+      margin: 0 auto 12px;
+   }
+</style>
+
+<div class="cap-page">
+   <h1 class="cap-title">Categories & Players</h1>
+   <p class="cap-subtitle">Browse players by trivia category or view the full player database.</p>
+
+   <!-- Selector -->
+   <div class="cap-selector">
+
+      <a href="?category=all"
+         class="cap-chip {% if selected_category_id == 'all' %}selected{% endif %}">
+         All players
+      </a>
+
+      <div class="cap-divider"></div>
+
+      {% regroup categories by get_sport_display as sport_groups %}
+      {% for group in sport_groups %}
+         <span class="cap-group-label">{{ group.grouper }}</span>
+         {% for cat in group.list %}
+            <a href="?category={{ cat.id }}"
+               class="cap-chip {% if selected_category.id == cat.id %}selected{% endif %}">
+               {{ cat.title }}
+            </a>
+         {% endfor %}
+         {% if not forloop.last %}<div class="cap-divider"></div>{% endif %}
+      {% endfor %}
+
+   </div>
+
+   <!-- Table -->
+   {% if selected_category_id %}
+   <div class="cap-table-wrap">
+
+      <div class="cap-table-header">
+         {% if selected_category %}
+            <p class="cap-table-title">{{ selected_category.title }}</p>
+            <span class="cap-table-meta">{{ players|length }} player{{ players|length|pluralize }}</span>
+         {% else %}
+            <p class="cap-table-title">All players</p>
+            <span class="cap-table-meta">{{ players|length }} player{{ players|length|pluralize }}</span>
+         {% endif %}
+      </div>
+
+      {% if players %}
+      <table>
+         <thead>
+            <tr>
+               {% if selected_category_id != 'all' %}<th class="rank-cell">#</th>{% endif %}
+               <th>Name</th>
+               <th>Sport</th>
+               {% if selected_category %}
+                  <th class="num">{{ selected_category.title }}</th>
+               {% else %}
+                  <th>Stats</th>
+               {% endif %}
+            </tr>
+         </thead>
+         <tbody>
+            {% for player in players %}
+            <tr>
+               {% if selected_category_id != 'all' %}
+                  <td class="rank-cell">{{ forloop.counter }}</td>
+               {% endif %}
+               <td>{{ player.name }}</td>
+               <td><span class="sport-badge">{{ player.sport|upper }}</span></td>
+               {% if selected_category %}
+                  <td class="num">{{ player.stats|get_item:selected_category.stat_code|default:"—" }}</td>
+               {% else %}
+                  <td class="muted">
+                     {% for key, val in player.stats.items %}
+                        {{ key }}: {{ val }}{% if not forloop.last %}, {% endif %}
+                     {% endfor %}
+                  </td>
+               {% endif %}
+            </tr>
+            {% endfor %}
+         </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+         <svg viewBox="0 0 24 24" width="36" height="36"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+         No players found.
+      </div>
+      {% endif %}
+
+   </div>
+   {% else %}
+   <div class="empty-state" style="padding:48px 0;">
+      <svg viewBox="0 0 24 24" width="36" height="36"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+      Select a category above to get started.
+   </div>
+   {% endif %}
+
+</div>
+{% endblock %}
