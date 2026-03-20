@@ -1,0 +1,635 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}{{ category.title }} — Pinpoint Challenge{% endblock %}
+
+{% block content %}
+<style>
+    .play-page {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 1.5rem 0 3rem;
+    }
+
+    .play-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .play-breadcrumb {
+        font-size: 13px;
+        color: #999;
+        margin: 0 0 6px;
+    }
+
+    .play-breadcrumb a {
+        color: #999;
+        text-decoration: none;
+    }
+
+    .play-breadcrumb a:hover {
+        color: #1a1a2e;
+    }
+
+    .play-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0 0 4px;
+    }
+
+    .play-hud {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        background: #fff;
+        border: 1px solid #e0e4ea;
+        border-radius: 12px;
+        padding: 14px 24px;
+        margin-bottom: 1.25rem;
+    }
+
+    .hud-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .hud-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: #aaa;
+    }
+
+    .hud-value {
+        font-size: 26px;
+        font-weight: 700;
+        color: #1a1a2e;
+        line-height: 1;
+    }
+
+    .hud-divider {
+        width: 1px;
+        height: 40px;
+        background: #eee;
+    }
+
+    .strikes {
+        display: flex;
+        gap: 6px;
+        margin-top: 2px;
+    }
+
+    .strike-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid #ddd;
+        background: #fff;
+    }
+
+    .strike-dot.used {
+        background: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .input-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+
+    .name-input {
+        flex: 1;
+        padding: 12px 16px;
+        font-size: 15px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        outline: none;
+        color: #1a1a2e;
+        background: #fff;
+        transition: border-color 0.15s;
+        font-family: inherit;
+    }
+
+    .name-input:focus {
+        border-color: #1a1a2e;
+    }
+
+    .autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 80px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        margin-top: 4px;
+        z-index: 100;
+        overflow: hidden;
+        display: none;
+    }
+
+    .autocomplete-item {
+        padding: 10px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        color: #1a1a2e;
+        transition: background 0.1s;
+    }
+
+    .autocomplete-item:hover {
+        background: #f4f6f9;
+    }
+
+    .autocomplete-item.highlighted {
+        background: #f4f6f9;
+    }
+
+    .submit-btn {
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        border-radius: 10px;
+        background: #1a1a2e;
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.2s;
+        white-space: nowrap;
+    }
+
+    .submit-btn:hover {
+        background: #2e2e4e;
+    }
+
+    .lanes-section {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+        align-items: start;
+    }
+
+    .lane {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .lane-header {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: #aaa;
+        text-align: center;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 2px;
+    }
+
+    .bubble {
+        background: #fff;
+        border: 1px solid #e0e4ea;
+        border-radius: 8px;
+        padding: 6px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .bubble.revealed {
+        border-color: #1a1a2e;
+        background: #f4f6f9;
+        animation: pop-in 0.3s ease;
+    }
+
+    @keyframes pop-in {
+        0% {
+            background: #e8f5e9;
+            border-color: #28a745;
+        }
+
+        100% {
+            background: #f4f6f9;
+            border-color: #1a1a2e;
+        }
+    }
+
+    .bubble-rank {
+        font-size: 10px;
+        font-weight: 600;
+        color: #aaa;
+        line-height: 1;
+    }
+
+    .bubble-rank.top3 {
+        color: #1a1a2e;
+    }
+
+    .bubble-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: #1a1a2e;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .bubble-name .blank {
+        display: inline-block;
+        height: 10px;
+        width: 70px;
+        border-radius: 3px;
+        background: #eee;
+        vertical-align: middle;
+    }
+
+    .bubble-stat {
+        font-size: 10px;
+        color: #777;
+        line-height: 1;
+    }
+
+    .bubble-stat .blank {
+        display: inline-block;
+        height: 10px;
+        width: 28px;
+        border-radius: 3px;
+        background: #eee;
+        vertical-align: middle;
+    }
+
+    .input-message {
+        font-size: 13px;
+        font-weight: 600;
+        margin: -10px 0 12px;
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+
+    .input-message.correct {
+        background: #f0fff4;
+        color: #28a745;
+    }
+
+    .input-message.error {
+        background: #fff0f0;
+        color: #dc3545;
+    }
+
+    .bubble.incorrect {
+        border-color: #ffcccc;
+        background: #fff0f0;
+    }
+
+    .bubble.incorrect .bubble-name {
+        color: #dc3545;
+    }
+
+    .name-input.flash-correct {
+        border-color: #28a745;
+        background: #f0fff4;
+    }
+
+    .name-input.flash-incorrect {
+        border-color: #dc3545;
+        background: #fff0f0;
+    }
+</style>
+
+{{ players_json|json_script:"players-data" }}
+
+<div id="game-config" data-stat-code="{{ category.stat_code|escapejs }}" data-pinpoint="{{ recommended_pinpoint }}"
+    style="display:none;">
+</div>
+
+<div class="play-page">
+
+    <div class="play-header">
+        <p class="play-breadcrumb">
+            <a href="{% url 'pinpoint_challenge' %}">Pinpoint Challenge</a> /
+            <a href="{% url 'pinpoint_challenge' %}?sport={{ category.sport }}">{{ category.get_sport_display }}</a> /
+            {{ category.title }}
+        </p>
+        <h1 class="play-title">{{ category.title }}</h1>
+    </div>
+
+    <div class="play-hud">
+        <div class="hud-item">
+            <span class="hud-label">Score</span>
+            <span class="hud-value" id="hudScore">0</span>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-item">
+            <span class="hud-label">Strikes</span>
+            <div class="strikes">
+                <div class="strike-dot"></div>
+                <div class="strike-dot"></div>
+                <div class="strike-dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-row">
+        <input type="text" class="name-input" id="nameInput" placeholder="Type a player name..." autocomplete="off" />
+        <div class="autocomplete-list" id="autocompleteList"></div>
+        <button class="submit-btn" onclick="submitGuess()">Submit</button>
+    </div>
+    <div id="inputMessage" class="input-message" style="display:none;"></div>
+
+    <div class="lanes-section" id="lanesSection"></div>
+</div>
+
+<script>
+    var allPlayers = JSON.parse(document.getElementById('players-data').textContent);
+    var config = document.getElementById('game-config').dataset;
+    var statCode = config.statCode;
+
+    var guessedIds = new Set();
+    var strikes = 0;
+    var score = 0;
+    var gameOver = false;
+    var highlightedIndex = -1;
+    var maxStrikes = 3;
+
+    function normalise(str) {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    }
+
+    function buildAllPlayers() {
+        var eligible = allPlayers.filter(function (p) {
+            return p && p.stats && p.stats[statCode] !== undefined;
+        });
+
+        eligible.sort(function (a, b) {
+            return b.stats[statCode] - a.stats[statCode];
+        });
+
+        var rank = 1;
+        for (var i = 0; i < eligible.length; i++) {
+            if (i > 0 && eligible[i].stats[statCode] !== eligible[i - 1].stats[statCode]) {
+                rank = i + 1;
+            }
+            eligible[i]._rank = rank;
+            eligible[i]._id = i;
+        }
+
+        return eligible;
+    }
+
+    function buildTop100(allRanked) {
+        var cutoffStat = null;
+        for (var i = 0; i < allRanked.length; i++) {
+            if (allRanked[i]._rank <= 100) {
+                cutoffStat = allRanked[i].stats[statCode];
+            }
+        }
+        return allRanked.filter(function (p) {
+            return cutoffStat === null || p.stats[statCode] >= cutoffStat;
+        });
+    }
+
+    function buildGrid(rankedPlayers) {
+        var section = document.getElementById('lanesSection');
+        section.innerHTML = '';
+
+        var laneCount = 5;
+        var lanes = [];
+
+        for (var i = 0; i < laneCount; i++) {
+            var laneEl = document.createElement('div');
+            laneEl.className = 'lane';
+            var perLane = Math.ceil(rankedPlayers.length / laneCount);
+            var start = i * perLane + 1;
+            var end = Math.min((i + 1) * perLane, rankedPlayers.length);
+            var header = document.createElement('div');
+            header.className = 'lane-header';
+            header.textContent = start + '–' + end;
+            laneEl.appendChild(header);
+            section.appendChild(laneEl);
+            lanes.push(laneEl);
+        }
+
+        rankedPlayers.forEach(function (player, idx) {
+            var laneIndex = Math.floor(idx / Math.ceil(rankedPlayers.length / laneCount));
+            laneIndex = Math.min(laneIndex, laneCount - 1);
+
+            var bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.id = 'bubble-' + player._id;
+
+            var rankClass = player._rank <= 3 ? 'bubble-rank top3' : 'bubble-rank';
+
+            bubble.innerHTML =
+                '<span class="' + rankClass + '">#' + player._rank + '</span>' +
+                '<span class="bubble-name"><span class="blank"></span></span>' +
+                '<span class="bubble-stat"><span class="blank"></span></span>';
+
+            lanes[laneIndex].appendChild(bubble);
+        });
+
+        var incorrectLane = document.createElement('div');
+        incorrectLane.className = 'lane';
+        incorrectLane.id = 'incorrectLane';
+        var incorrectHeader = document.createElement('div');
+        incorrectHeader.className = 'lane-header';
+        incorrectHeader.textContent = 'Not in top 100';
+        incorrectLane.appendChild(incorrectHeader);
+        section.appendChild(incorrectLane);
+    }
+
+    function revealRow(player, animate) {
+        var bubble = document.getElementById('bubble-' + player._id);
+        if (!bubble) return;
+        bubble.querySelector('.bubble-name').textContent = player.name;
+        bubble.querySelector('.bubble-stat').textContent = player.stats[statCode];
+        if (animate) bubble.classList.add('revealed');
+    }
+
+    function renderStrikes() {
+        var dots = document.querySelectorAll('.strike-dot');
+        dots.forEach(function (dot, i) {
+            dot.classList.toggle('used', i < strikes);
+        });
+    }
+
+    function flashInput(type) {
+        var input = document.getElementById('nameInput');
+        input.classList.add('flash-' + type);
+        setTimeout(function () { input.classList.remove('flash-' + type); }, 600);
+    }
+
+    function showMessage(text, type) {
+        var el = document.getElementById('inputMessage');
+        el.textContent = text;
+        el.className = 'input-message ' + type;
+        el.style.display = 'block';
+        clearTimeout(el._timeout);
+        el._timeout = setTimeout(function () { el.style.display = 'none'; }, 2000);
+    }
+
+    function addIncorrectBubble(name, rank, stat) {
+        var lane = document.getElementById('incorrectLane');
+        var bubble = document.createElement('div');
+        bubble.className = 'bubble incorrect';
+        bubble.innerHTML =
+            '<span class="bubble-rank">#' + rank + '</span>' +
+            '<span class="bubble-name">' + name + '</span>' +
+            '<span class="bubble-stat">' + stat + '</span>';
+        lane.appendChild(bubble);
+    }
+
+    function endGame() {
+        gameOver = true;
+        document.getElementById('nameInput').disabled = true;
+        document.getElementById('submitBtn').disabled = true;
+        rankedPlayers.forEach(function (p) {
+            if (!guessedIds.has(p._id)) revealRow(p, false);
+        });
+        showMessage('Game over! You scored ' + score + ' points.', 'correct');
+    }
+
+    function submitGuess() {
+        if (gameOver) return;
+        var input = document.getElementById('nameInput');
+        var val = input.value.trim();
+        if (!val) return;
+
+        document.getElementById('autocompleteList').style.display = 'none';
+        highlightedIndex = -1;
+
+        var normVal = normalise(val);
+
+        // Check full database
+        var existsInDatabase = allRankedPlayers.find(function (p) {
+            return p && p.name && normalise(p.name) === normVal;
+        });
+
+        if (!existsInDatabase) {
+            showMessage('Player not found — check the spelling.', 'error');
+            flashInput('incorrect');
+            input.value = '';
+            return;
+        }
+
+        // Check if in top 100
+        var match = rankedPlayers.find(function (p) {
+            return p && p.name && normalise(p.name) === normVal;
+        });
+
+        if (!match) {
+            strikes++;
+            renderStrikes();
+            flashInput('incorrect');
+            addIncorrectBubble(existsInDatabase.name, existsInDatabase._rank, existsInDatabase.stats[statCode]);
+            showMessage(existsInDatabase.name + ' is ranked #' + existsInDatabase._rank + ' — not in the top 100.', 'error');
+            input.value = '';
+            if (strikes >= maxStrikes) endGame();
+            return;
+        }
+
+        if (guessedIds.has(match._id)) {
+            showMessage('Already guessed!', 'error');
+            flashInput('incorrect');
+            input.value = '';
+            return;
+        }
+
+        // Correct
+        var points = match._rank;
+        guessedIds.add(match._id);
+        score += points;
+        document.getElementById('hudScore').textContent = score;
+        revealRow(match, true);
+        flashInput('correct');
+        showMessage('+' + points + ' points! (#' + match._rank + ')', 'correct');
+        input.value = '';
+
+        if (guessedIds.size === rankedPlayers.length) endGame();
+    }
+
+    function getAutocompleteMatches(query) {
+        if (!query || query.length < 1) return [];
+        var q = normalise(query);
+        return allRankedPlayers.filter(function (p) {
+            if (!p || !p.name) return false;
+            var parts = normalise(p.name).split(' ');
+            return parts.some(function (part) { return part.startsWith(q); });
+        }).slice(0, 6);
+    }
+
+    function renderAutocomplete(matches) {
+        var list = document.getElementById('autocompleteList');
+        if (!matches.length) {
+            list.style.display = 'none';
+            return;
+        }
+        list.innerHTML = '';
+        matches.forEach(function (player, idx) {
+            var item = document.createElement('div');
+            item.className = 'autocomplete-item' + (idx === highlightedIndex ? ' highlighted' : '');
+            item.textContent = player.name;
+            item.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                document.getElementById('nameInput').value = player.name;
+                list.style.display = 'none';
+                submitGuess();
+            });
+            list.appendChild(item);
+        });
+        list.style.display = 'block';
+    }
+
+    document.getElementById('nameInput').addEventListener('input', function () {
+        highlightedIndex = -1;
+        renderAutocomplete(getAutocompleteMatches(this.value));
+    });
+
+    document.getElementById('nameInput').addEventListener('keydown', function (e) {
+        var list = document.getElementById('autocompleteList');
+        var items = list.querySelectorAll('.autocomplete-item');
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+            items.forEach(function (el, i) { el.classList.toggle('highlighted', i === highlightedIndex); });
+            if (highlightedIndex >= 0) document.getElementById('nameInput').value = items[highlightedIndex].textContent;
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            highlightedIndex = Math.max(highlightedIndex - 1, -1);
+            items.forEach(function (el, i) { el.classList.toggle('highlighted', i === highlightedIndex); });
+            if (highlightedIndex >= 0) document.getElementById('nameInput').value = items[highlightedIndex].textContent;
+        } else if (e.key === 'Enter') {
+            if (highlightedIndex >= 0 && items[highlightedIndex]) {
+                document.getElementById('nameInput').value = items[highlightedIndex].textContent;
+                list.style.display = 'none';
+                highlightedIndex = -1;
+            }
+            submitGuess();
+        } else if (e.key === 'Escape') {
+            list.style.display = 'none';
+            highlightedIndex = -1;
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.input-row')) {
+            document.getElementById('autocompleteList').style.display = 'none';
+        }
+    });
+
+    var allRankedPlayers = buildAllPlayers();
+    var rankedPlayers = buildTop100(allRankedPlayers);
+    buildGrid(rankedPlayers);
+</script>
+
+{% endblock %}

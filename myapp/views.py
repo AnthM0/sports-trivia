@@ -49,6 +49,31 @@ def categories_and_players(request):
         'selected_category_id': selected_category_id,
     })
 
+def pinpoint_challenge_play(request):
+    mode = request.GET.get('mode', '')
+    sport = request.GET.get('sport', '')
+    category_stat_code = request.GET.get('category', '')
+
+    if not mode or not sport or not category_stat_code:
+        return redirect('pinpoint_challenge')
+
+    try:
+        category = TriviaCategory.objects.get(stat_code=category_stat_code)
+    except TriviaCategory.DoesNotExist:
+        return redirect('pinpoint_challenge')
+
+    players_data = [
+        {'name': p.name, 'stats': p.stats}
+        for p in category.players.all()
+    ]
+
+    return render(request, 'myapp/pinpoint_challenge_play.html', {
+        'mode': mode,
+        'category': category,
+        'players_json': players_data,
+        'recommended_pinpoint': category.recommended_pinpoint or 10,
+    })
+
 def add_trivia_category(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method.'})

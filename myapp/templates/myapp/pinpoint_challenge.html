@@ -238,7 +238,7 @@
         </div>
 
         <!-- Play -->
-        <form method="get" action="{% url 'pinpoint_challenge' %}">
+        <form method="get" action="{% url 'pinpoint_challenge_play' %}">
             <input type="hidden" name="mode" id="hiddenMode">
             <input type="hidden" name="sport" value="{{ selected_sport }}">
             <input type="hidden" name="category" id="hiddenCategory">
@@ -378,10 +378,10 @@
       checkReady();
    }
 
-   function checkReady() {
-      var ready = selectedMode && selectedCategory;
-      document.getElementById('playBtn').disabled = !ready;
-   }
+    function checkReady() {
+        var ready = selectedMode && selectedCategory;
+        document.getElementById('playBtn').disabled = !ready;
+    }
 
    if (selectedSport) {
       document.getElementById('categorySection').style.display = 'block';
